@@ -286,14 +286,17 @@ class sale_order(osv.osv):
         'method_of_payment' : fields.many2one('method_of_payment.model',string='Method of Payment',required=True),
         'reimbursement' : fields.many2one('reimbursement.model',string='Reimbursement',required=True), 
         'beneficiary_bank_name' : fields.many2one('bank_names.model',string='Beneficiary Bank Name',required=True),
+        'beneficiary_bank_name2' : fields.char(string='beneficiary_bank_name2', required=True),
         'beneficiary_bank_branch' : fields.many2one('bank_branch.model',string='Beneficiary Bank Branch',required=True),
+        'beneficiary_bank_branch2' : fields.char(string='beneficiary_bank_branch2', required=True),
         'beneficiary_bank_address' : fields.text(string='Beneficiary Bank Address',required=True),
         'swift_code' : fields.char(string='Swift Code',required=True),  
 
         'product_type' : fields.many2one('product_type.model',string='Type',required=True),
         'bin_no' : fields.char(string='BIN',required=True),
-        'country_of_origin' : fields.many2one('country_origin.model',string='Country Of Origin', required=True),
+        'country_of_origin' : fields.many2one('country_origin.model',string='Country Of Origin', required=True), 
         'country_of_origin2' : fields.char(string='Country Of Origin', required=True),
+        'benificiary_name' : fields.char(string='Benificiary name', required=True),
         'terms_of_delivery' : fields.many2one('terms_of_delivery.model',string='Terms of Delivery',required=True), 
         'time_of_delivery' : fields.char(string='Time of Delivery',required=True),    
 
@@ -369,14 +372,23 @@ class sale_order(osv.osv):
     def onchange_bank_name_branch(self, cr, uid, ids, beneficiary_bank_name,beneficiary_bank_branch, context=None):
         bank_name_id = beneficiary_bank_name
         bank_branch_id = beneficiary_bank_branch
+
+        
         if bank_name_id and bank_branch_id :
+            all_data_obj_of_beneficiary_bank_names = self.pool.get('bank_names.model').browse(cr, uid,bank_name_id,context=context)
+            beneficiary_bank_name = all_data_obj_of_beneficiary_bank_names.name
+            all_data_obj_of_beneficiary_bank_branch = self.pool.get('bank_branch.model').browse(cr, uid,bank_branch_id,context=context)
+            beneficiary_bank_branch = all_data_obj_of_beneficiary_bank_branch.name
+
             service_obj= self.pool.get('bank_names_branch_address.model').search(cr, uid,[('name','=',bank_name_id),('branch','=',bank_branch_id),],context=context)
             bank_address_in_list = self.pool.get('bank_names_branch_address.model').read(cr, uid,service_obj,['address'], context=context)
             if len(bank_address_in_list) != 0:
                 bank_address = self.split_bank_address(bank_address_in_list)
                 res = {
                     'value': {
-                        'beneficiary_bank_address': bank_address
+                        'beneficiary_bank_address': bank_address,
+                        'beneficiary_bank_name2': beneficiary_bank_name,
+                        'beneficiary_bank_branch2': beneficiary_bank_branch,
                     }
                 }
             else :
@@ -411,13 +423,18 @@ class sale_order(osv.osv):
             res={}  
         return res
 
-    def onchange_country_of_origin(self, cr, uid, ids, country_of_origin=False, context=None):
+    def onchange_country_of_origin(self, cr, uid, ids, country_of_origin=False, company_id=False, context=None):
         res= {}
         if country_of_origin:
             service_obj= self.pool.get('country_origin.model')
             rec = service_obj.browse(cr, uid, country_of_origin)
+
+            service_obj2= self.pool.get('res.company')
+            rec2 = service_obj2.browse(cr, uid, company_id)
+
             res = {'value':{
                 'country_of_origin2':rec.name,
+                'benificiary_name':rec2.name,
                 }}
         else:
             res={}  

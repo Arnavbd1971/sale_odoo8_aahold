@@ -254,8 +254,10 @@
                                 <field name="erc_no"/> 
                                 <field name="method_of_payment" />
                                 <field name="reimbursement"/>
-                                <field name="beneficiary_bank_name" on_change="onchange_bank_name_branch(beneficiary_bank_name,beneficiary_bank_branch)"/>
+                                <field name="beneficiary_bank_name" on_change="onchange_bank_name_branch(beneficiary_bank_name,beneficiary_bank_branch)"/> 
+                                <field name="beneficiary_bank_name2" invisible="1"/>
                                 <field name="beneficiary_bank_branch" on_change="onchange_bank_name_branch(beneficiary_bank_name,beneficiary_bank_branch)"/>
+                                <field name="beneficiary_bank_branch2" invisible="1"/>
                                 <field name="beneficiary_bank_address"/>
                                 <field name="swift_code"/>
                                 <field name="signature" on_change="onchange_signature(signature)"/>
@@ -267,8 +269,9 @@
                             <group>
                                 <field name="product_type"/>
                                 <field name="bin_no"/>
-                                <field name="country_of_origin" on_change="onchange_country_of_origin(country_of_origin)"/>
+                                <field name="country_of_origin" on_change="onchange_country_of_origin(country_of_origin, company_id)"/> 
                                 <field name="country_of_origin2"  invisible="1"/>
+                                <field name="benificiary_name"  invisible='1'/>
                                 <field name="terms_of_delivery"/>
                             </group>
 
