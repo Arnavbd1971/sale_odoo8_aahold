@@ -310,7 +310,7 @@ class sale_order(osv.osv):
         'place_of_delivery_name2' : fields.char(string='Delivery Factory Name', required=True),
         'place_of_delivery_addr' : fields.text(string='Delivery Factory Address',required=True),
         'bags_of_packing' : fields.char(string='Packing',required=True),
-        # 'behalf_of' : fields.char(string='On behalf of',required=True),
+        
 
         'payment_term': fields.many2one('account.payment.term', 'Payment Term'),
         'fiscal_position': fields.many2one('account.fiscal.position', 'Fiscal Position'),
@@ -345,7 +345,6 @@ class sale_order(osv.osv):
     @api.depends('amount_total', 'currency_id')
     def compute_text(self):
         amt_en = amount_to_text(self.amount_total, 'en', self.currency_id.symbol)
-        # return amount_to_text(self.amount_total,lang='en'. self.currency_id.symbol)
         return amt_en
 
     def onchange_signature(self, cr, uid, ids, signature, context=None):

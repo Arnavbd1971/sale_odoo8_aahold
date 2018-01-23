@@ -237,12 +237,6 @@
                                 </group>
                             </group>
                         </page>
-
-                        <page string="Report Header">
-                            <group>
-			            	    <field name='report_paper_format_id' widget='many2one_list' />
-                            </group>
-			            </page>
                     </notebook>
 
                     <div class="row"> 
@@ -250,7 +244,6 @@
                             <h4 style='font-weight:bold;'>Payment Details</h4>
                             <group>
                                 <field name="company_id" widget="selection" groups="base.group_multi_company"/>
-                                <!-- <field name="beneficiary_full_name" on_change="onchange_beneficiary_full_name(beneficiary_full_name)"/> -->
                                 <field name="erc_no"/> 
                                 <field name="method_of_payment" />
                                 <field name="reimbursement"/>
@@ -275,7 +268,6 @@
                                 <field name="terms_of_delivery"/>
                             </group>
 
-                            <!-- <p style='font-weight:bold;'>Time of Delivery: Within <field name="time_of_delivery" class='oe_inline' nolabel="1"/> days from the date of receiving confirm L/C</p> -->
 
                             <div class='col-xs-5' style='padding-left:0px !important;'>
                                 <p style='font-weight:bold;'>Time of Delivery: </p>
@@ -290,8 +282,6 @@
                                 <field name="place_of_delivery_addr"/>
                             </group>
 
-                            <!-- <p style='font-weight:bold;'>Packing: Standard Bag Packing <field name="bags_of_packing" class='oe_inline'/>kgs./bag</p> -->
-
                             <div class='col-xs-5' style='padding-left:0px !important;'>
                                 <p style='font-weight:bold;'>Packing: </p>
                             </div>
@@ -302,7 +292,10 @@
                         </div>
 
                         <div class="col-xs-12">
-                            <label for="note" /> : <field name="note" class="oe_inline" placeholder="Terms and conditions..."/>
+                            <group>
+                                <field name="note" placeholder="Terms and conditions..."/>
+                                <field name='report_paper_format_id' widget='many2one_list' />
+                            </group>
                         </div>
                     </div>
 
