@@ -3,11 +3,11 @@
     <data>
         <report 
             id="report_sale_order"
-            string="Quotation / Order"
+            string="PI / Quotation"
             model="sale.order" 
             report_type="qweb-pdf"
-            file="sale.report_saleorder" 
-            name="sale.report_saleorder" 
+            file="sale.proforma_invoice" 
+            name="sale.proforma_invoice" 
         />
     </data>
 </openerp>

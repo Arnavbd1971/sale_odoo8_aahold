@@ -32,10 +32,12 @@ from openerp import models, api
 from openerp.tools import amount_to_text
 from lxml import etree 
 
+
 class res_company(osv.Model):
     _inherit = "res.company"
     _columns = {
         'sale_note': fields.text('Default Terms and Conditions', translate=True, help="Default terms and conditions for quotations."),
+        'company_short_name': fields.char(string='Short Name',required=True)
     }
 
 class sale_order(osv.osv):
@@ -161,13 +163,25 @@ class sale_order(osv.osv):
         result = {}
         for line in self.pool.get('sale.order.line').browse(cr, uid, ids, context=context):
             result[line.order_id.id] = True
-        return result.keys()
+        return result.keys()    
 
     def _get_default_company(self, cr, uid, context=None):
         company_id = self.pool.get('res.users')._get_company(cr, uid, context=context)
         if not company_id:
             raise osv.except_osv(_('Error!'), _('There is no default company for the current user!'))
         return company_id
+
+                    
+
+    # def _get_default_swift_code(self, cr, uid, context=None):
+    #     company_id = self.pool.get('res.users')._get_company(cr, uid, context=context)
+    #     service_obj= self.pool.get('res.company').browse(cr, uid,company_id,context=context)
+
+    #     company_swift_code = service_obj.swift_code
+
+    #     if not company_swift_code:
+    #         raise osv.except_osv(_('Error!'), _('There is no swift code for the current company!'))
+    #     return company_swift_code    
 
     def _get_default_section_id(self, cr, uid, context=None):
         """ Gives default section by checking if present in the context """
@@ -194,10 +208,14 @@ class sale_order(osv.osv):
     _columns = {
         'name': fields.char('Order Reference', required=True, copy=False,
             readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, select=True),
+
+        'do_no': fields.char('Delivery Order No', required=True, copy=False,
+            readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, select=True),    
+
         'origin': fields.char('Source Document', help="Reference of the document that generated this sales order request."),
         'client_order_ref': fields.char('Reference/Description', copy=False),
 
-        'report_paper_format_id':fields.many2one('report.paperformat',string='Paper Title', required=True),
+        'report_paper_format_id':fields.many2one('report.paperformat',string='Paper Title'),
 
         'state': fields.selection([
             ('draft', 'Draft Quotation'),
@@ -221,8 +239,7 @@ class sale_order(osv.osv):
 
         'date_confirm': fields.date('Confirmation Date', readonly=True, select=True, help="Date on which sales order is confirmed.", copy=False),
 
-        'validity_date': fields.date(string='Validity Date', required=True),
-
+        'validity_date': fields.datetime(string='Validity Date', required=True),
 
 
         'user_id': fields.many2one('res.users', 'Salesperson', states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, select=True, track_visibility='onchange'),
@@ -230,6 +247,8 @@ class sale_order(osv.osv):
         'partner_id': fields.many2one('res.partner', 'Customer', readonly=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, required=True, change_default=True, select=True, track_visibility='always'),
         'partner_invoice_id': fields.many2one('res.partner', 'Invoice Address', readonly=True, required=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, help="Invoice address for current sales order."),
         'partner_shipping_id': fields.many2one('res.partner', 'Delivery Address', readonly=True, required=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, help="Delivery address for current sales order."),
+        'cus_factory_addr' : fields.char(string='cus_factory_addr'),
+        
 
         'order_policy': fields.selection([
                 ('manual', 'On Demand'),
@@ -251,7 +270,8 @@ class sale_order(osv.osv):
             fnct_search=_invoiced_search, type='boolean', help="It indicates that an invoice has been paid."),
         'invoice_exists': fields.function(_invoice_exists, string='Invoiced',
             fnct_search=_invoiced_search, type='boolean', help="It indicates that sales order has at least one invoice."),
-        'note': fields.many2one('terms_of_delivery.model','Terms and conditions',required=True),
+        'note': fields.many2one('terms_conditions.model','Terms and conditions'),
+        # terms_conditions
 
         'amount_untaxed': fields.function(_amount_all_wrapper, digits_compute=dp.get_precision('Account'), string='Untaxed Amount',
             store={
@@ -281,24 +301,26 @@ class sale_order(osv.osv):
             store=True,multi='sums', help="The total quantity."),
 
         'unity_of_mesure2': fields.char(string='uom',required=True), 
-        # 'beneficiary_full_name' : fields.many2one('beneficiary_full_name.model',string='Beneficiary Full Name',required=True),
-        'erc_no' : fields.char(string='ERC NO.',required=True),
-        'method_of_payment' : fields.many2one('method_of_payment.model',string='Method of Payment',required=True),
-        'reimbursement' : fields.many2one('reimbursement.model',string='Reimbursement',required=True), 
-        'beneficiary_bank_name' : fields.many2one('bank_names.model',string='Beneficiary Bank Name',required=True),
-        'beneficiary_bank_name2' : fields.char(string='beneficiary_bank_name2', required=True),
-        'beneficiary_bank_branch' : fields.many2one('bank_branch.model',string='Beneficiary Bank Branch',required=True),
-        'beneficiary_bank_branch2' : fields.char(string='beneficiary_bank_branch2', required=True),
-        'beneficiary_bank_address' : fields.text(string='Beneficiary Bank Address',required=True),
-        'swift_code' : fields.char(string='Swift Code',required=True),  
+        'erc_no' : fields.char(string='ERC NO.'),
+        'method_of_payment' : fields.many2one('method_of_payment.model',string='Method of Payment'),
+        'reimbursement' : fields.many2one('reimbursement.model',string='Reimbursement'), 
+        'beneficiary_bank_name' : fields.many2one('bank_names_branch_address.model',string='Beneficiary Bank Name',required=True),
+        'beneficiary_bank_name2' : fields.char(string='beneficiary_bank_name2'),
+        'beneficiary_bank_branch' : fields.char(string='Beneficiary Bank Branch'),
+        'beneficiary_bank_address' : fields.text(string='Beneficiary Bank Address'),
+          
+        'pi_type' : fields.selection([('LOCAL', 'LOCAL'),('L/C', 'L/C'),('L/C-DELAY', 'L/C Delay')],'PI Type',required=True),
+        'product_type' : fields.many2one('product_type.model',string='Type'),
+        'bin_no' : fields.char(string='BIN'),
+        'country_of_origin' : fields.many2one('country_origin.model',string='Country Of Origin'), 
+        'country_of_origin2' : fields.char(string='Country Of Origin'),
+        'benificiary_name' : fields.char(string='Benificiary name'),
+        'terms_of_delivery' : fields.many2one('terms_of_delivery.model',string='Terms of Delivery'), 
+        'time_of_delivery' : fields.char(string='Time of Delivery'),    
 
-        'product_type' : fields.many2one('product_type.model',string='Type',required=True),
-        'bin_no' : fields.char(string='BIN',required=True),
-        'country_of_origin' : fields.many2one('country_origin.model',string='Country Of Origin', required=True), 
-        'country_of_origin2' : fields.char(string='Country Of Origin', required=True),
-        'benificiary_name' : fields.char(string='Benificiary name', required=True),
-        'terms_of_delivery' : fields.many2one('terms_of_delivery.model',string='Terms of Delivery',required=True), 
-        'time_of_delivery' : fields.char(string='Time of Delivery',required=True),    
+        'lc_num_id' : fields.many2one('lc_informations.model', string='L/C No'),
+        'lc_num' : fields.char(string='L/C No'),
+        'amend_no' : fields.char(string='Amend No'),
 
         'signature':fields.many2one('signature_upload.model',string='Signature'),
         
@@ -306,10 +328,13 @@ class sale_order(osv.osv):
             'Signarute_image',help="Select signature image here"
         ),
 
-        'place_of_delivery_name' : fields.many2one('supplier_factory_name_address.model',string='Delivery Factory Name', required=True),
-        'place_of_delivery_name2' : fields.char(string='Delivery Factory Name', required=True),
-        'place_of_delivery_addr' : fields.text(string='Delivery Factory Address',required=True),
-        'bags_of_packing' : fields.char(string='Packing',required=True),
+        'place_of_delivery_name' : fields.many2one('supplier_factory_name_address.model',string='Delivery Factory Name'),
+        'place_of_delivery_name2' : fields.char(string='Delivery Factory Name'),
+        'place_of_delivery_factory_name' : fields.char(string='Delivery Factory Name'),
+        'place_of_delivery_addr' : fields.text(string='Delivery Factory Address'),
+        'bags_of_packing' : fields.char(string='Packing'),
+        'swift_code' : fields.char(string='Swift Code'),  
+        'account_number' : fields.char(string='Account Number'),  
         
 
         'payment_term': fields.many2one('account.payment.term', 'Payment Term'),
@@ -322,10 +347,12 @@ class sale_order(osv.osv):
 
     _defaults = {  
         'date_order': fields.datetime.now,
-        'validity_date': fields.datetime.now,
+        # 'validity_date': fields.datetime.now,
+        'validity_date':  lambda *a:(datetime.now() + timedelta(days=(14))).strftime('%Y-%m-%d'),
         'unity_of_mesure2' : 'Kgs',
         'order_policy': 'manual',
         'company_id': _get_default_company,
+        # 'company_swift_code': _get_default_swift_code,
         'state': 'draft',
         'user_id': lambda obj, cr, uid, context: uid,
         'name': lambda obj, cr, uid, context: '/',
@@ -333,6 +360,8 @@ class sale_order(osv.osv):
         'partner_shipping_id': lambda self, cr, uid, context: context.get('partner_id', False) and self.pool.get('res.partner').address_get(cr, uid, [context['partner_id']], ['delivery'])['delivery'],
         'note': lambda self, cr, uid, context: self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id.sale_note,
         'section_id': lambda s, cr, uid, c: s._get_default_section_id(cr, uid, c),
+        'country_of_origin': 1,
+        'country_of_origin2': 'Bangladesh',
     }
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Order Reference must be unique per Company!'),
@@ -342,10 +371,79 @@ class sale_order(osv.osv):
     def _get_customer_lead(self, cr, uid, product_tmpl_id):
         return False
 
+    def onchange_lc_num(self, cr, uid, ids, lc_num_id, context=None):
+        lc_num_id = lc_num_id 
+        service_obj = self.pool.get('lc_informations.model').browse(cr, uid,lc_num_id,context=context)
+        lc_num = service_obj.name   
+        amend_no = service_obj.amend_no   
+        if lc_num:
+            res = {
+                'value': {
+                    'lc_num': lc_num,
+                    'amend_no': amend_no,
+                }
+            }
+        else : 
+            res = {}
+        return res
+
+    # def onchange_pi_type(self, cr, uid, ids, pi_type, context=None):
+    #     pi_type = pi_type 
+
+    #     if pi_type == 'LOCAL':
+
+    #     service_obj = self.pool.get('lc_informations.model').browse(cr, uid,lc_num_id,context=context)
+    #     lc_num = service_obj.name   
+    #     if lc_num:
+    #         res = {
+    #             'value': {
+    #                 'lc_num': lc_num,
+    #             }
+    #         }
+    #     else : 
+    #         res = {}
+    #     return res    
+
+
     @api.depends('amount_total', 'currency_id')
-    def compute_text(self):
-        amt_en = amount_to_text(self.amount_total, 'en', self.currency_id.symbol)
-        return amt_en
+    def numToWords(self,join=True):
+        num = self.amount_total
+        '''words = {} convert an integer number into words'''
+        units = ['','one','two','three','four','five','six','seven','eight','nine']
+        teens = ['','eleven','twelve','thirteen','fourteen','fifteen','sixteen', \
+                'seventeen','eighteen','nineteen']
+        tens = ['','ten','twenty','thirty','forty','fifty','sixty','seventy', \
+                'eighty','ninety']
+        thousands = ['','thousand','million','billion','trillion','quadrillion', \
+                    'quintillion','sextillion','septillion','octillion', \
+                    'nonillion','decillion','undecillion','duodecillion', \
+                    'tredecillion','quattuordecillion','sexdecillion', \
+                    'septendecillion','octodecillion','novemdecillion', \
+                    'vigintillion']
+        words = []
+        if num==0: words.append('zero')
+        else:
+            numStr = '%d'%num
+            numStrLen = len(numStr)
+            groups = (numStrLen+2)/3
+            numStr = numStr.zfill(groups*3)
+            for i in range(0,groups*3,3):
+                h,t,u = int(numStr[i]),int(numStr[i+1]),int(numStr[i+2])
+                g = groups-(i/3+1)
+                if h>=1:
+                    words.append(units[h])
+                    words.append('hundred')
+                if t>1:
+                    words.append(tens[t])
+                    if u>=1: words.append(units[u])
+                elif t==1:
+                    if u>=1: words.append(teens[u])
+                    else: words.append(tens[t])
+                else:
+                    if u>=1: words.append(units[u])
+                if (g>=1) and ((h+t+u)>0): words.append(thousands[g]+',')
+        if join: return ' '.join(words)
+        return words
 
     def onchange_signature(self, cr, uid, ids, signature, context=None):
         signature_id = signature
@@ -368,31 +466,46 @@ class sale_order(osv.osv):
 
         return res
 
-    def onchange_bank_name_branch(self, cr, uid, ids, beneficiary_bank_name,beneficiary_bank_branch, context=None):
+    def onchange_bank_name_branch(self, cr, uid, ids, beneficiary_bank_name, context=None):
         bank_name_id = beneficiary_bank_name
-        bank_branch_id = beneficiary_bank_branch
+        # bank_branch_id = beneficiary_bank_branch
 
         
-        if bank_name_id and bank_branch_id :
-            all_data_obj_of_beneficiary_bank_names = self.pool.get('bank_names.model').browse(cr, uid,bank_name_id,context=context)
-            beneficiary_bank_name = all_data_obj_of_beneficiary_bank_names.name
-            all_data_obj_of_beneficiary_bank_branch = self.pool.get('bank_branch.model').browse(cr, uid,bank_branch_id,context=context)
-            beneficiary_bank_branch = all_data_obj_of_beneficiary_bank_branch.name
+        if bank_name_id  :
+            # all_data_obj_of_beneficiary_bank_names = self.pool.get('bank_names.model').browse(cr, uid,bank_name_id,context=context)
+            # beneficiary_bank_name = all_data_obj_of_beneficiary_bank_names.name
+            # all_data_obj_of_beneficiary_bank_branch = self.pool.get('bank_branch.model').browse(cr, uid,bank_branch_id,context=context)
+            # beneficiary_bank_branch = all_data_obj_of_beneficiary_bank_branch.name
 
-            service_obj= self.pool.get('bank_names_branch_address.model').search(cr, uid,[('name','=',bank_name_id),('branch','=',bank_branch_id),],context=context)
-            bank_address_in_list = self.pool.get('bank_names_branch_address.model').read(cr, uid,service_obj,['address'], context=context)
-            if len(bank_address_in_list) != 0:
-                bank_address = self.split_bank_address(bank_address_in_list)
+            # service_obj= self.pool.get('bank_names_branch_address.model').search(cr, uid,[('name','=',bank_name_id),('branch','=',bank_branch_id),],context=context)
+            # bank_address_in_list = self.pool.get('bank_names_branch_address.model').read(cr, uid,service_obj,['address'], context=context)
+
+            service_obj = self.pool.get('bank_names_branch_address.model').browse(cr, uid,bank_name_id,context=context)
+            beneficiary_bank_name = service_obj.bank_name
+            beneficiary_bank_branch = service_obj.bank_branch
+            beneficiary_bank_address = service_obj.bank_address
+            beneficiary_swift_code = service_obj.s_code
+
+            
+
+
+            if beneficiary_bank_branch and beneficiary_bank_address:
+                # bank_address = self.split_bank_address(bank_address_in_list)
                 res = {
                     'value': {
-                        'beneficiary_bank_address': bank_address,
                         'beneficiary_bank_name2': beneficiary_bank_name,
+                        'beneficiary_bank_branch': beneficiary_bank_branch,
                         'beneficiary_bank_branch2': beneficiary_bank_branch,
+                        'beneficiary_bank_address': beneficiary_bank_address,
+                        'swift_code': beneficiary_swift_code,
                     }
                 }
             else :
                 res = {
                     'value': {
+                        'beneficiary_bank_name2': '',
+                        'beneficiary_bank_branch': '',
+                        'beneficiary_bank_branch2': '',
                         'beneficiary_bank_address': ''
                     }
                 }
@@ -416,6 +529,7 @@ class sale_order(osv.osv):
             rec = service_obj.browse(cr, uid, place_of_delivery_name)
             res = {'value':{
                 'place_of_delivery_name2':rec.name,
+                'place_of_delivery_factory_name':rec.factory_name,
                 'place_of_delivery_addr':rec.address,
                 }}
         else:
@@ -522,7 +636,16 @@ class sale_order(osv.osv):
         fiscal_position = self.pool['account.fiscal.position'].get_fiscal_position(cr, uid, company_id, partner_id, delivery_id, context=context)
         if fiscal_position:
             r['value']['fiscal_position'] = fiscal_position
+
+        if delivery_id:
+            service_obj= self.pool.get('res.partner')
+            rec = service_obj.browse(cr, uid, delivery_id)
+            address = rec.display_name
+            r['value']['cus_factory_addr'] = address
+
         return r
+
+    
 
     def onchange_partner_id(self, cr, uid, ids, part, context=None):
         if not part:
@@ -550,11 +673,41 @@ class sale_order(osv.osv):
         if sale_note: val.update({'note': sale_note})  
         return {'value': val}
 
+
+    # if not vals:
+    #         vals = {}
+    #     seq_obj = self.env['ir.sequence']
+    #     seq_obj2 = self.env['ir.sequence']
+    #     invoice_num = seq_obj.next_by_code('commercial_invoice_report_num') or 'New'
+    #     only_num = seq_obj2.next_by_code('only_num') or 'New_seqq'
+    #     vals['name'] = invoice_num
+    #     vals['only_seq_num'] = only_num
+    #     return super(CommercialInvoiceModel, self).create(vals)
+
     def create(self, cr, uid, vals, context=None):
+      
         if context is None:
             context = {}
         if vals.get('name', '/') == '/':
-            vals['name'] = self.pool.get('ir.sequence').get(cr, uid, 'sale.order', context=context) or '/'
+            sequence = self.pool.get('ir.sequence').get(cr, uid, 'sale.order', context=context) or '/'
+
+            pi_type = vals.get('pi_type')
+
+            if pi_type == 'LOCAL':
+                vals['name'] = sequence + '.' + 'LOCAL'
+            elif pi_type == 'L/C':
+                vals['name'] = sequence + '.' + 'L/C'
+            elif pi_type == 'L/C-DELAY':
+                vals['name'] = sequence + '.' + 'L/C'
+            else:
+                vals['name'] = sequence    
+
+            # seq_obj = self.pool.get['ir.sequence']
+            # do_num = seq_obj.next_by_code('Sales_Order') or '/'
+            # vals['name'] = do_num
+            # vals['do_no'] = 'DO-' + vals['name']
+
+
         if vals.get('partner_id') and any(f not in vals for f in ['partner_invoice_id', 'partner_shipping_id', 'pricelist_id', 'fiscal_position']):
             defaults = self.onchange_partner_id(cr, uid, [], vals['partner_id'], context=context)['value']
             if not vals.get('fiscal_position') and vals.get('partner_shipping_id'):
@@ -562,8 +715,10 @@ class sale_order(osv.osv):
                 defaults.update(delivery_onchange['value'])
             vals = dict(defaults, **vals)
         ctx = dict(context or {}, mail_create_nolog=True)
+
         new_id = super(sale_order, self).create(cr, uid, vals, context=ctx)
         self.message_post(cr, uid, [new_id], body=_("Quotation created"), context=ctx)
+        
         return new_id
 
     def button_dummy(self, cr, uid, ids, context=None):
@@ -644,7 +799,7 @@ class sale_order(osv.osv):
         '''
         assert len(ids) == 1, 'This option should only be used for a single id at a time'
         self.signal_workflow(cr, uid, ids, 'quotation_sent')
-        return self.pool['report'].get_action(cr, uid, ids, 'sale.report_saleorder', context=context)
+        return self.pool['report'].get_action(cr, uid, ids, 'sale.proforma_invoice', context=context)
 
     def manual_invoice(self, cr, uid, ids, context=None):
         """ create invoices for the given Proforma Invoices (ids), and open the form
@@ -797,11 +952,40 @@ class sale_order(osv.osv):
         self.write(cr, uid, ids, {'state': 'cancel'})
         return True
 
+    # @api.multi
+    # def _get_field_name(self):
+    #     global eid
+    #     structer_id = self.env['hr.contract'].search([('employee_id', '=', eid)], limit=1).struct_id
+    #     if (structer_id.id > 0):
+    #     stmt = "SELECT hr_structure_salary_rule_rel.rule_id FROM hr_structure_salary_rule_rel WHERE hr_structure_salary_rule_rel.struct_id=%s"
+    #     params = (structer_id.id,)
+    #     self.env.cr.execute(stmt, params)
+
+    #     rule_code = self.env['hr.salary.rule'].search([('id', '=', self.env.cr.fetchone()[0])], limit=1)
+    #     return rule_code.code
+    #     else : 
+    #     return ''    
+
     def action_button_confirm(self, cr, uid, ids, context=None):
+        # global pi_no
         if not context:
             context = {}
         assert len(ids) == 1, 'This option should only be used for a single id at a time.'
-        self.signal_workflow(cr, uid, ids, 'order_confirm')
+        confirm = self.signal_workflow(cr, uid, ids, 'order_confirm')
+
+
+        if confirm :
+            do_generate_num = self.pool.get('ir.sequence').get(cr, uid, 'delivery.order', context=context) or '/'
+            stmt = "SELECT origin FROM stock_picking ORDER BY id DESC LIMIT 1"
+            cr.execute(stmt)
+            pi_code = cr.fetchone()[0]
+            # do_num = 'DO-'+pi_code
+
+            # cr.execute("UPDATE stock_picking SET do_no = '"+do_num+"' WHERE origin = '"+ pi_code +"'")
+            cr.execute("UPDATE stock_picking SET do_no = '"+do_generate_num+"' WHERE origin = '"+ pi_code +"'")
+
+        
+
         if context.get('send_email'):
             self.force_quotation_send(cr, uid, ids, context=context)
         return True
@@ -1413,7 +1597,9 @@ class sale_order_line(osv.osv):
 
                 warning_msgs += _("No valid pricelist line found ! :") + warn_msg +"\n\n"
             else:
-                price = self.pool['account.tax']._fix_tax_included_price(cr, uid, price, taxes, result['tax_id'])
+                if update_tax:
+                    # price = self.pool['account.tax']._fix_tax_included_price(cr, uid, price, taxes, result['tax_id'])
+                    price = self.pool['account.tax']._fix_tax_included_price(cr, uid, price, product_obj.taxes_id, result['tax_id'])
                 result.update({'price_unit': price})
                 if context.get('uom_qty_change', False):
                     values = {'price_unit': price}

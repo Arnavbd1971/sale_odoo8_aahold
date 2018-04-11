@@ -47,10 +47,14 @@
             <field name="arch" type="xml">
                 <tree string="Proforma Invoices" fonts="bold:message_unread==True" colors="grey:state=='cancel';blue:state in ('waiting_date','manual');red:state in ('invoice_except','shipping_except')">
                     <field name="message_unread" invisible="1"/>
-                    <field name="name" string="Order Number"/>
+                    <!-- <field name="name" string="Order Number"/> -->
+                    <field name="name" string="P/I No"/>
+                    <field name="pi_type" /> 
+                    <field name="lc_num_id"/>
+                    <field name="amend_no"/>
                     <field name="date_order"/>
                     <field name="partner_id"/>
-                    <field name="user_id"/>
+                    <!-- <field name="user_id"/> -->
                     <field name="amount_total" sum="Total Tax Included"/>
                     <field name="state"/>
                 </tree>
@@ -65,9 +69,12 @@
                 <tree string="Quotation" fonts="bold:message_unread==True" colors="grey:state=='cancel';blue:state in ('waiting_date','manual');red:state in ('invoice_except','shipping_except')">
                     <field name="message_unread" invisible="1"/>
                     <field name="name" string="Quotation Number"/>
+                    <field name="pi_type"/>
+                    <field name="lc_num_id"/>
+                    <field name="amend_no"/>
                     <field name="date_order"/>
                     <field name="partner_id"/>
-                    <field name="user_id"/>
+                    <!-- <field name="user_id"/> -->
                     <field name="amount_total" sum="Total Tax Included"/>
                     <field name="state"/>
                 </tree>
@@ -99,27 +106,51 @@
                         <field name="state" widget="statusbar" statusbar_visible="draft,sent,progress,done" statusbar_colors='{"invoice_except":"red","waiting_date":"blue"}'/>
                 </header>
                 <sheet>
-                    <h1>
-                        <label string="P/I No : " attrs="{'invisible': [('state','in',('draft','sent'))]}"/>
-                        <label string="P/I No : " attrs="{'invisible': [('state','not in',('draft','sent'))]}"/>
-                        <field name="name" class="oe_inline" readonly="1"/>
-                    </h1>
+                    <div class='row'>
+                        <div class='col-xs-7'>
+                            <h1> 
+                                <label string="P/I No : " attrs="{'invisible': [('state','in',('draft','sent'))]}"/>
+                                <label string="P/I No : " attrs="{'invisible': [('state','not in',('draft','sent'))]}"/>
+                                <field name="name" class="oe_inline" readonly="1"/>
+                            </h1>
+                        </div>
+                        <div class='col-xs-5'>
+                                <!-- <h1 attrs="{'invisible':[('lc_num','=',False)]}">
+                                    L/C No : <field name="lc_num" class="oe_inline" readonly="1" />
+                                </h1> -->
+                                <h2 attrs="{'invisible':[('pi_type','in',('LOCAL','L/C-DELAY',False))]}">
+                                    L/C No : <field name="lc_num_id" class="oe_inline" on_change="onchange_lc_num(lc_num_id)"/>
+                                </h2>
+                                <field name="lc_num" invisible='1' />
+                                <label string="Amend No : " attrs="{'invisible':[('pi_type','in',('LOCAL','L/C-DELAY',False))]}"/>
+                                <field name="amend_no" attrs="{'invisible':[('pi_type','in',('LOCAL','L/C-DELAY',False))]}"/>
+                        </div>
+                    </div>
+                    
                     <group>
                         <group>
                             <field name="partner_id" on_change="onchange_partner_id(partner_id, context)" domain="[('customer','=',True)]" context="{'search_default_customer':1, 'show_address': 1}" options='{"always_reload": True}'/>
-                            <field name="partner_invoice_id" groups="sale.group_delivery_invoice_address" context="{'default_type':'invoice'}"/>
+
+                            <field name="partner_invoice_id" groups="sale.group_delivery_invoice_address" context="{'default_type':'invoice'}"  invisible="1"/>
+
                             <field name="partner_shipping_id" on_change="onchange_delivery_id(company_id, partner_id, partner_shipping_id, fiscal_position)" groups="sale.group_delivery_invoice_address" context="{'default_type':'delivery'}"/>
+                            <field name="cus_factory_addr" invisible="1"/>
+                            
                             <field name="project_id" context="{'partner_id':partner_invoice_id, 'manager_id': user_id, 'default_pricelist_id':pricelist_id, 'default_name':name, 'default_type': 'contract'}" groups="sale.group_analytic_accounting" domain="[('type','in',['view','normal','contract'])]"/>
                         </group>
+                        
                         <group>
                             <field name="date_order"/>
-                            <field name="client_order_ref"/>
+                            <field name="client_order_ref"  invisible="1"/>
                             <field domain="[('type','=','sale')]" name="pricelist_id" groups="product.group_sale_pricelist" on_change="onchange_pricelist_id(pricelist_id,order_line)"/>
                             <field name="currency_id" invisible="1"/>
                             <field name="validity_date"/>
                         </group>
                     </group>
+
+
                     <notebook>
+                        <!-- Order Lines start -->
                         <page string="Order Lines">
                             <field name="order_line">
                                 <form string="Sales Order Lines">
@@ -218,6 +249,72 @@
                             <div class="oe_clear"/>
                             
                         </page>
+                        <!-- Order Lines end -->
+
+                        <!-- L/C OR Local PI Information start -->
+                        <page string="L/C OR Local PI Information"> 
+                            <div class='row'>
+                                <div class='col-xs-6'>
+                                    <h3 style='font-weight:bold;'>Payment Details</h3>
+                                    <group>
+                                        <field name="company_id" widget="selection" groups="base.group_multi_company"/>
+                                        <field name="erc_no"/>  
+                                        <field name="method_of_payment" />
+                                        <field name="reimbursement"/>
+                                    </group>
+                                    <div class='col-xs-5' style='padding-left:0px !important;'>
+                                        <p style='font-weight:bold;'>Time of Delivery: </p>
+                                    </div>
+                                    <div class='col-xs-7' style='padding-left:0px !important;'>
+                                        <p style='font-weight:bold;'>Within <field name="time_of_delivery" class='oe_inline' nolabel="1"/> days from the date of receiving confirm L/C</p>
+                                    </div>
+                                    <div class='col-xs-5' style='padding-left:0px !important;'>
+                                        <p style='font-weight:bold;'>Packing: </p>
+                                    </div>
+                                    <div class='col-xs-7' style='padding-left:0px !important;'>
+                                        <p style='font-weight:bold;'>Standard Bag Packing <field name="bags_of_packing" class='oe_inline'/>kgs./bag</p>
+                                    </div>
+                                </div>
+                                <div class='col-xs-6'>
+                                    <h3 style='font-weight:bold;'>Product and Delivery Details</h3>
+                                    <group> 
+                                        <field name="pi_type"/>
+                                        <field name="product_type"/>
+                                        <field name="bin_no"/>
+                                        <field name="country_of_origin" on_change="onchange_country_of_origin(country_of_origin, company_id)" /> 
+                                        <field name="country_of_origin2"  invisible="1" />
+                                        <field name="benificiary_name"  invisible='1'/>
+                                        <field name="terms_of_delivery"/>
+                                    </group>
+                                    
+                                    <group>
+                                        <field name="place_of_delivery_name" on_change="onchange_factory_name(place_of_delivery_name)"/>
+                                        <field name="place_of_delivery_name2"  invisible="1"/>
+                                        <field name="place_of_delivery_addr"/>
+                                    </group>
+                                </div>
+                            </div>
+                            
+                            <div class="oe_clear"/>
+                        </page>
+                        <!-- L/C OR Local PI Information end -->
+
+
+                        <!-- Bank Information start -->
+                        <page string="Bank Information"> 
+                            <group>
+                                <field name="beneficiary_bank_name" on_change="onchange_bank_name_branch(beneficiary_bank_name)"/> 
+                                <field name="beneficiary_bank_name2" invisible="1"/>
+                                <field name="beneficiary_bank_branch"/>
+                                <field name="beneficiary_bank_address"/> 
+                                <field name="swift_code"/>
+                                <field name="account_number"/>
+                            </group>
+                            <div class="oe_clear"/>
+                        </page>
+                        <!-- Bank Information end -->
+
+                        <!-- Other Information start -->
                         <page string="Other Information" groups="base.group_user">
                             <group>
                                 <group name="sales_person" groups="base.group_user">
@@ -237,62 +334,15 @@
                                 </group>
                             </group>
                         </page>
+                        <!-- Other Information end -->
+
                     </notebook>
 
                     <div class="row"> 
-                        <div class="col-xs-6"> 
-                            <h4 style='font-weight:bold;'>Payment Details</h4>
-                            <group>
-                                <field name="company_id" widget="selection" groups="base.group_multi_company"/>
-                                <field name="erc_no"/> 
-                                <field name="method_of_payment" />
-                                <field name="reimbursement"/>
-                                <field name="beneficiary_bank_name" on_change="onchange_bank_name_branch(beneficiary_bank_name,beneficiary_bank_branch)"/> 
-                                <field name="beneficiary_bank_name2" invisible="1"/>
-                                <field name="beneficiary_bank_branch" on_change="onchange_bank_name_branch(beneficiary_bank_name,beneficiary_bank_branch)"/>
-                                <field name="beneficiary_bank_branch2" invisible="1"/>
-                                <field name="beneficiary_bank_address"/>
-                                <field name="swift_code"/>
-                                <field name="signature" on_change="onchange_signature(signature)"/>
-                                <field name="signature_image" widget="image" />
-                            </group>
-                        </div>
-                        <div class="col-xs-6">
-                            <h4 style='font-weight:bold;'>Product and Delivery Details</h4>
-                            <group>
-                                <field name="product_type"/>
-                                <field name="bin_no"/>
-                                <field name="country_of_origin" on_change="onchange_country_of_origin(country_of_origin, company_id)"/> 
-                                <field name="country_of_origin2"  invisible="1"/>
-                                <field name="benificiary_name"  invisible='1'/>
-                                <field name="terms_of_delivery"/>
-                            </group>
-
-
-                            <div class='col-xs-5' style='padding-left:0px !important;'>
-                                <p style='font-weight:bold;'>Time of Delivery: </p>
-                            </div>
-                            <div class='col-xs-7' style='padding-left:0px !important;'>
-                                <p style='font-weight:bold;'>Within <field name="time_of_delivery" class='oe_inline' nolabel="1"/> days from the date of receiving confirm L/C</p>
-                            </div>
-
-                            <group>
-                                <field name="place_of_delivery_name" on_change="onchange_factory_name(place_of_delivery_name)"/>
-                                <field name="place_of_delivery_name2"  invisible="1"/>
-                                <field name="place_of_delivery_addr"/>
-                            </group>
-
-                            <div class='col-xs-5' style='padding-left:0px !important;'>
-                                <p style='font-weight:bold;'>Packing: </p>
-                            </div>
-                            <div class='col-xs-7' style='padding-left:0px !important;'>
-                                <p style='font-weight:bold;'>Standard Bag Packing <field name="bags_of_packing" class='oe_inline'/>kgs./bag</p>
-                            </div>
-
-                        </div>
-
                         <div class="col-xs-12">
                             <group>
+                                <field name="signature" on_change="onchange_signature(signature)"/>
+                                <field name="signature_image" widget="image" />
                                 <field name="note" placeholder="Terms and conditions..."/>
                                 <field name='report_paper_format_id' widget='many2one_list' />
                             </group>
@@ -374,6 +424,8 @@
         </record>
 
         <menuitem action="action_orders" id="menu_sale_order" parent="base.menu_sales" sequence="6" groups="base.group_sale_salesman,base.group_sale_manager"/>
+
+        
 
         <record id="action_orders_exception" model="ir.actions.act_window">
             <field name="name">Sales in Exception</field>
@@ -619,6 +671,13 @@
                 <xpath expr="//group[@name='account_grp']" position="after">
                     <group name="sale_grp" string="Sales">
                         <field name="sale_note" nolabel="1" placeholder="Default terms &amp; conditions..."/>
+                    </group>
+                </xpath>
+
+                <!-- <xpath expr="//field[@name='parent_id']" position="after"> -->
+                <xpath expr="//div[@class='oe_title']" position="after">
+                    <group>
+                        <field name="company_short_name"  placeholder='Company Short Name' class="oe_inline"/>
                     </group>
                 </xpath>
             </field>

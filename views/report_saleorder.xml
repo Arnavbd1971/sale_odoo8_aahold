@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
 <data>
-<template id="report_saleorder_document">
+<template id="proforma_invoice_document">
 
     
     <t t-call="report.external_layout">
@@ -11,10 +11,10 @@
             <div t-if='o.report_paper_format_id.name'>
                 <div t-if='o.report_paper_format_id.head_office_addr'>
                     <div class="row" style=' border-bottom:1px solid #000;'>
-                        <div class="col-xs-4" style='margin:0px !important; color:#fff;'>
+                        <div class="col-xs-4" style='margin:0px !important; color:#000;'>
                             <h2 style='text-align:center;'><span t-field='o.report_paper_format_id.name'/></h2>
                         </div>
-                        <div class="col-xs-8 text-right" style='margin:0px !important;  color:#fff;'>
+                        <div class="col-xs-8 text-right" style='margin:0px !important;  color:#000;'>
                             <p style='padding-top:28px!important;' t-if='o.report_paper_format_id.head_office_addr'>Head Office: <span t-field='o.report_paper_format_id.head_office_addr'/></p>
                         </div>
                     </div>
@@ -23,50 +23,63 @@
 
             
 
-            <div t-if='o.report_paper_format_id.name == "None" '>
-                <div class="row" style='margin-top:110px;'></div>
-            </div>
             <div class='row'>
                 <div class="col-xs-6">
                     <h1 t-if="o.partner_shipping_id == o.partner_invoice_id">Proforma Invoice</h1>
-                    <h1 t-if="o.partner_shipping_id != o.partner_invoice_id">Invoice Address</h1>
+                    <h1 t-if="o.partner_shipping_id != o.partner_invoice_id">Proforma Invoice</h1>
+                    <!-- <h1 t-if="o.partner_shipping_id != o.partner_invoice_id">Invoice Address</h1> -->
                     <h5 style='font-weight:bold;'>Buyer </h5>
-                    <h4 t-field ='o.partner_invoice_id.name'> </h4>
-                    <span t-field ='o.partner_invoice_id.street'/>
+                    <!-- <h4 t-field ='o.partner_invoice_id.name'> </h4> -->
+                    <h4 style='margin-bottom:0px !important;padding-bottom:0px !important;' t-field ='o.partner_id.name'> </h4>
+                    <p style='margin-top:0px !important;padding-top:0px !important;'><span t-field ='o.partner_id.street'/><span t-field ='o.partner_id.street2'/>,<span t-field ='o.partner_id.city'/></p>
+                    <!-- <span t-field ='o.partner_invoice_id.street'/>
                     <span t-field ='o.partner_invoice_id.city'/>
                     <span t-field ='o.partner_invoice_id.zip'/>
                     <span t-field ='o.partner_invoice_id.country_id.name'/>
                     <p t-field ='o.partner_invoice_id.phone'/>
-                    <p t-if="o.partner_id.vat">VAT: <span t-field="o.partner_id.vat"/></p>
-                    <div t-if="o.partner_shipping_id != o.partner_invoice_id" class="mt8">
+                    <p t-if="o.partner_id.vat">VAT: <span t-field="o.partner_id.vat"/></p> -->
+
+                    <!-- <div t-if="o.partner_shipping_id != o.partner_invoice_id" class="mt8">
                         <strong>Shipping address:</strong>
                         <div t-field="o.partner_shipping_id" 
                             t-field-options='{"widget": "contact", "fields": ["address", "name", "phone", "fax"], "no_marker": true}'/>
                         <p t-if="o.partner_id.vat">VAT: <span t-field="o.partner_id.vat"/></p>
-                    </div>                    
+                    </div>                     -->
                 </div>
                 <div class="col-xs-5 col-xs-offset-1">
-                    <div class="col-xs-3" style='margin-top:23px;'>
-                        <p t-if="o.state not in ['draft','sent']">P/I. No.</p>    
-                        <p t-if="o.state in ['draft','sent']">Qut. No.</p>    
-                    </div>    
-                    <div class="col-xs-9" style='margin-top:23px;'>
-                        <p> : &#8194;<span t-field="o.name"/></p>    
+                    
+                    <div class='row'>
+                        <div class="col-xs-3" style='margin-top:23px;'>
+                            <p t-if="o.state not in ['draft','sent']">P/I. No.</p>    
+                            <p t-if="o.state in ['draft','sent']">Qut. No.</p>    
+                        </div>    
+                        <div class="col-xs-9" style='margin-top:23px;'>
+                            <p> : &#8194;<span t-field="o.name"/></p>    
+                        </div>
                     </div>
                     
-                    <div class="col-xs-3">
-                        <p>Date</p>    
-                    </div>    
-                    <div class="col-xs-9">
-                        <p> : &#8194;<span t-field="o.date_order"/></p>    
-                    </div> 
-
-                    <div class="col-xs-3">
-                        <p>Validity</p>    
-                    </div>    
-                    <div class="col-xs-9">
-                        <p> : &#8194;<span t-field="o.validity_date"/></p>    
-                    </div> 
+                    <span t-if='o.date_order'>
+                        <div class='row'>
+                            <div class="col-xs-3">
+                                <p>Date</p>    
+                            </div>    
+                            <div class="col-xs-9">
+                                <p> : &#8194;<span t-esc="time.strftime('%d %B %Y',time.strptime(o.date_order,'%Y-%m-%d %H:%M:%S'))"/></p>    
+                            </div>    
+                        </div>
+                    </span>
+                     
+                    <span t-if='o.validity_date'>
+                        <div class='row'>
+                            <div class="col-xs-3">
+                                <p>Validity</p>    
+                            </div>    
+                            <div class="col-xs-9">
+                                <p> : &#8194;<span t-esc="time.strftime('%d %B %Y',time.strptime(o.validity_date,'%Y-%m-%d %H:%M:%S'))"/></p>    
+                            </div>    
+                        </div>
+                    </span>    
+                     
                 </div>
             </div>
             <div class="row" style='margin-top:10px;'>
@@ -75,9 +88,9 @@
                         <thead>
                             <tr style=''>
                                 <th class='' style='background-color:#000!important;border-right:2px solid #fff;color:#fff!important;padding-left:25px;'>Product</th>
-                                <th class="text-center" style='background-color:#000!important;border-right:2px solid #fff;color:#fff!important;'>Unit Price</th>
-                                <th class="text-center" style='background-color:#000!important;border-right:2px solid #fff;color:#fff!important;'>Quantity</th>
-                                <th class="text-right" style='background-color:#000!important;border-right:2px solid #fff;color:#fff!important;'>Total Price</th>
+                                <th class="text-center" style='background-color:#000!important;border-right:2px solid #fff;color:#fff!important;'>Unit Price (<span style='color:#fff !important;' t-field="o.pricelist_id.currency_id.name"/><span style='color:#fff !important;' t-field="o.pricelist_id.currency_id.symbol"/>)</th>
+                                <th class="text-center" style='background-color:#000!important;border-right:2px solid #fff;color:#fff!important;'>Quantity (<span style='color:#fff !important;' t-field="o.unity_of_mesure2"/>)</th>
+                                <th class="text-right" style='background-color:#000!important;border-right:2px solid #fff;color:#fff!important;'>Total Price (<span style='color:#fff !important;' t-field="o.pricelist_id.currency_id.name"/><span style='color:#fff !important;' t-field="o.pricelist_id.currency_id.symbol"/>)</th>
                             </tr>
                         </thead>
                         <tbody class="sale_tbody">
@@ -96,8 +109,9 @@
                                 </td>
 
                                 <td class="text-right">
-                                    <span t-field="l.price_subtotal"
-                                        t-field-options='{"widget": "monetary", "display_currency": "o.pricelist_id.currency_id"}'/>
+                                    <!-- <span t-field="l.price_subtotal"
+                                        t-field-options='{"widget": "monetary", "display_currency": "o.pricelist_id.currency_id"}'/> -->
+                                    <span t-field="l.price_subtotal"/>    
                                 </td>
                             </tr>
                             <tr>
@@ -119,7 +133,8 @@
                                 
                             </tr>
                             <tr>
-                                <td colspan="4" class='text-right' style='font-size:15px;font-weight:bold;' >( <span t-esc="o.compute_text()" /> only )</td>
+                                <!-- <td colspan="4" class='text-right' style='font-size:15px;font-weight:bold;' >( <span style='' t-field="o.pricelist_id.currency_id.name"/> <span t-esc="o.compute_text()" /> only )</td> -->
+                                <td colspan="4" class='text-right' style='font-size:15px;font-weight:bold;' >( <span style='' t-field="o.pricelist_id.currency_id.name"/><span style='' t-field="o.pricelist_id.currency_id.symbol"/> <span t-esc="o.numToWords()" />  only )</td>
                             </tr>
                         </tbody>
                     </table>
@@ -133,122 +148,237 @@
                 <div class="col-xs-6" style='padding-right:0px!important;'>
                     <h4 style='font-weight:bold;'>Payment Details</h4>
 
-                        <div class="col-xs-5"  style='padding-left:0px!important;'>
-                            Beneficiary Full Name :
-                        </div>
+                        <span t-if='o.company_id'>
+                            <div class='row' style='margin-left:2px !important;'>
+                                <div class="col-xs-4" style='padding-left:0px!important;'>
+                                    <p>Beneficiary Full Name</p>    
+                                </div>    
+                                <div class="col-xs-8" style='padding-left:0px!important;'>
+                                    <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                        <p>: &#8194;</p>
+                                    </div>
 
-                        <div class="col-xs-7"  style='padding-left:0px!important;'>
-                             <span style='font-weight:bold;' t-field="o.company_id"/>
-                        </div>
-
-                        <div class="col-xs-5"  style='padding-left:0px!important;'>
-                                ERC No :
-                        </div>
-    
-                        <div class="col-xs-7"  style='padding-left:0px!important;'>
-                            <span style='font-weight:bold;' t-field="o.erc_no"/>
-                        </div>
-
-                        <div class="col-xs-5"  style='padding-left:0px!important;'>
-                                Method of Payment :
-                        </div>
-    
-                        <div class="col-xs-7"  style='padding-left:0px!important;'>
-                            <span style='font-weight:bold;' t-field="o.method_of_payment"/>
-                        </div>
-
-                        <div class="col-xs-5"  style='padding-left:0px!important;'>
-                                Reimbursement :
-                        </div>
-    
-                        <div class="col-xs-7"  style='padding-left:0px!important;'>
-                             <span style='font-weight:bold;' t-field="o.reimbursement"/>
-                        </div>
-
-                        <div class="col-xs-5"  style='padding-left:0px!important;'>
-                                Beneficiary Bank and Branch :
-                        </div>
-    
-                        <div class="col-xs-7"  style='padding-left:0px!important;'>
-                             <span  style='font-weight:bold;' t-field="o.beneficiary_bank_name"/>, <span  style='font-weight:bold;' t-field="o.beneficiary_bank_branch"/>, <span  style='font-weight:bold;' t-field="o.beneficiary_bank_address"/>, Swift Code : <span  style='font-weight:bold;' t-field="o.swift_code"/>
-                        </div>
-                       
-                        <div class="col-xs-12" style='padding-left:0px!important;'>
-                                <p>Other Trems and Conditions</p>
-                                <p  style='font-weight:bold;' t-field="o.note" />
-                                <p  style='font-weight:bold; font-size:11px!important;' t-if="o.payment_term.note">
-                                    <strong>Payment Term:</strong>
-                                    <span t-field="o.payment_term.note"/>
-                                </p>
-                        </div>
+                                    <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                        <p><span t-field="o.company_id"/></p>
+                                    </div>   
+                                </div>
+                            </div>
+                        </span>
                         
+                        <span t-if='o.erc_no'> 
+                            <div class='row' style='margin-left:2px !important;'>
+                                <div class="col-xs-4" style='padding-left:0px!important;'>
+                                    <p>ERC No</p>    
+                                </div>    
+                                <div class="col-xs-8" style='padding-left:0px!important;'>
+                                    <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                        <p>: &#8194;</p>
+                                    </div>
+
+                                    <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                        <p><span t-field="o.erc_no"/></p>
+                                    </div>     
+                                </div>
+                            </div>
+                        </span>
+                        
+                        <span t-if='o.method_of_payment'> 
+                            <div class='row' style='margin-left:2px !important;'>
+                                <div class="col-xs-4" style='padding-left:0px!important;'>
+                                    <p>Method of Payment</p>    
+                                </div>    
+                                <div class="col-xs-8" style='padding-left:0px!important;'>
+                                    <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                        <p>: &#8194;</p>
+                                    </div>
+
+                                    <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                        <p><span t-field="o.method_of_payment"/></p>
+                                    </div>  
+                                </div>
+                            </div>
+                        </span>    
+                        
+                        <span t-if='o.reimbursement'> 
+                            <div class='row' style='margin-left:2px !important;'>
+                                <div class="col-xs-4" style='padding-left:0px!important;'>
+                                    <p>Reimbursement</p>    
+                                </div>    
+                                <div class="col-xs-8" style='padding-left:0px!important;'>
+                                    <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                        <p>: &#8194;</p>
+                                    </div>
+
+                                    <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                        <p><span t-field="o.reimbursement"/></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </span>    
+                        
+                        <span t-if='o.beneficiary_bank_name2'> 
+                            <div class='row' style='margin-left:2px !important;'>
+                                <div class="col-xs-4" style='padding-left:0px!important;'>
+                                    <p>Beneficiary Bank and Branch</p>    
+                                </div>    
+                                <div class="col-xs-8" style='padding-left:0px!important;'>
+                                    <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                        <p>: &#8194;</p>
+                                    </div>
+
+                                    <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                        <p><span  style='' t-field="o.beneficiary_bank_name2"/>, <span  style='' t-field="o.beneficiary_bank_branch"/>, <span  style='' t-field="o.beneficiary_bank_address"/>, <span t-if='o.swift_code'>Swift Code : <span  style='' t-field="o.swift_code"/></span> <span t-if='o.account_number'>Account Number : <span  style='' t-field="o.account_number"/></span></p>
+                                    </div>
+                                </div>    
+                            </div>
+                        </span>    
+                        
+                        <span t-if='o.note'> 
+                            <div class='row' style='margin-left:2px !important;'>
+                                <div class='col-xs-12'  style='padding-left:0px!important;'>
+                                    <h5 style='margin-bottom: 0px !important; padding-bottom:0px !important;'>Other Trems and Conditions</h5>
+                                    <p style='margin-top: 0px !important; padding-top:0px !important;'><span style='' t-field="o.note"/></p>
+                                </div>
+
+                                <div class='col-xs-12'  style='padding-left:0px!important;' t-if="o.payment_term.note">
+                                    <h5 style='margin-bottom: 0px !important; padding-bottom:0px !important;'>Payment Term</h5>
+                                    <p style='margin-top: 0px !important; padding-top:0px !important;'><span style='' t-field="o.payment_term.note"/></p>
+                                </div>
+                            </div>
+                        </span>    
+                                                
                     </div>
 
 
                     <div class="col-xs-6">
                         <h4 style='font-weight:bold;'>Product and Delivery Details</h4>
-                            <div class="col-xs-4"  style='padding-left:0px!important;'>
-                                    Type :
-                            </div>
-    
-                            <div class="col-xs-8"  style='padding-left:0px!important;'>
-                                 <span style='font-weight:bold;' t-field="o.product_type"/>
-                            </div>
 
-                            <div class="col-xs-4"  style='padding-left:0px!important;'>
-                                    BIN :
-                            </div>
-    
-                            <div class="col-xs-8"  style='padding-left:0px!important;'>
-                                 <span style='font-weight:bold;' t-field="o.bin_no"/>
-                            </div>
+                            <span t-if='o.product_type'>
+                                <div class='row' style='margin-left:2px !important;'>
+                                    <div class="col-xs-4" style='padding-left:0px!important;'>
+                                        <p>Type</p>    
+                                    </div>    
+                                    <div class="col-xs-8" style='padding-left:0px!important;'>
+                                        <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                            <p>: &#8194;</p>
+                                        </div>
 
-                            <div class="col-xs-4"  style='padding-left:0px!important;'>
-                                    Country of Origin :
-                            </div>
-    
-                            <div class="col-xs-8"  style='padding-left:0px!important;'>
-                                 <span style='font-weight:bold;' t-field="o.country_of_origin"/>
-                            </div>
+                                        <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                            <p><span t-field="o.product_type"/></p>
+                                        </div>   
+                                    </div>
+                                </div>
+                            </span>
 
-                            <div class="col-xs-4"  style='padding-left:0px!important;'>
-                                    Terms of Delivery :
-                            </div>
-    
-                            <div class="col-xs-8"  style='padding-left:0px!important;'>
-                                 <span style='font-weight:bold;' t-field="o.terms_of_delivery"/>
-                            </div>
+                            <span t-if='o.bin_no'>
+                                <div class='row' style='margin-left:2px !important;'>
+                                    <div class="col-xs-4" style='padding-left:0px!important;'>
+                                        <p>BIN</p>    
+                                    </div>    
+                                    <div class="col-xs-8" style='padding-left:0px!important;'>
+                                        <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                            <p>: &#8194;</p>
+                                        </div>
 
-                            <div class="col-xs-4"  style='padding-left:0px!important;'>
-                                    Time of Delivery :
-                            </div>
-    
-                            <div class="col-xs-8"  style='padding-left:0px!important;'>
-                                 Within <span style='font-weight:bold;' t-field="o.time_of_delivery"/> days form the date of receiving confirm L/C
-                            </div>
+                                        <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                            <p><span t-field="o.bin_no"/></p>
+                                        </div>   
+                                    </div>
+                                </div>
+                            </span>
 
-                            <div class="col-xs-4"  style='padding-left:0px!important;'>
-                                    Place of Delivery :
-                            </div>
-    
-                            <div class="col-xs-8"  style='padding-left:0px!important;'>
-                                 <span  style='font-weight:bold;' t-field="o.place_of_delivery_name"/>,   <span  style='font-weight:bold;' t-field="o.place_of_delivery_addr"/>
-                            </div>
+                            <span t-if='o.country_of_origin'>
+                                <div class='row' style='margin-left:2px !important;'>
+                                    <div class="col-xs-4" style='padding-left:0px!important;'>
+                                        <p>Country of Origin</p>    
+                                    </div>    
+                                    <div class="col-xs-8" style='padding-left:0px!important;'>
+                                        <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                            <p>: &#8194;</p>
+                                        </div>
 
-                            <div class="col-xs-4"  style='padding-left:0px!important;'>
-                                    Packing :
-                            </div>
-    
-                            <div class="col-xs-8"  style='padding-left:0px!important;'>
-                                 Standard Bag Packing <span style='font-weight:bold;' t-field="o.bags_of_packing"/>kgs./bag
-                            </div>
-                         
+                                        <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                            <p><span t-field="o.country_of_origin"/></p>
+                                        </div>   
+                                    </div>
+                                </div>
+                            </span>
+
+                            <span t-if='o.terms_of_delivery'>
+                                <div class='row' style='margin-left:2px !important;'>
+                                    <div class="col-xs-4" style='padding-left:0px!important;'>
+                                        <p>Terms of Delivery</p>    
+                                    </div>    
+                                    <div class="col-xs-8" style='padding-left:0px!important;'>
+                                        <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                            <p>: &#8194;</p>
+                                        </div>
+
+                                        <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                            <p><span t-field="o.terms_of_delivery"/></p>
+                                        </div>   
+                                    </div>
+                                </div>
+                            </span>
+
+                            <span t-if='o.time_of_delivery'>
+                                <div class='row' style='margin-left:2px !important;'>
+                                    <div class="col-xs-4" style='padding-left:0px!important;'>
+                                        <p>Time of Delivery</p>    
+                                    </div>    
+                                    <div class="col-xs-8" style='padding-left:0px!important;'>
+                                        <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                            <p>: &#8194;</p>
+                                        </div>
+
+                                        <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                            <p>Within <span style='' t-field="o.time_of_delivery"/> days form the date of receiving confirm L/C</p>
+                                        </div>   
+                                    </div>
+                                </div>
+                            </span>
+
+                            <span t-if='o.place_of_delivery_name2'>
+                                <div class='row' style='margin-left:2px !important;'>
+                                    <div class="col-xs-4" style='padding-left:0px!important;'>
+                                        <p>Place of Delivery</p>    
+                                    </div>    
+                                    <div class="col-xs-8" style='padding-left:0px!important;'>
+                                        <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                            <p>: &#8194;</p>
+                                        </div>
+
+                                        <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                            <p><span  style='' t-field="o.place_of_delivery_name2"/>, <span  style='' t-field="o.place_of_delivery_addr"/></p>
+                                        </div>   
+                                    </div>
+                                </div>
+                            </span>
+
+                            <span t-if='o.bags_of_packing'>
+                                <div class='row' style='margin-left:2px !important;'>
+                                    <div class="col-xs-4" style='padding-left:0px!important;'>
+                                        <p>Packing</p>    
+                                    </div>    
+                                    <div class="col-xs-8" style='padding-left:0px!important;'>
+                                        <div class='col-xs-1' style='margin:0px !important;padding:0px !important;'>
+                                            <p>: &#8194;</p>
+                                        </div>
+
+                                        <div class='col-xs-11'  style='margin:0px !important;padding:0px !important;'>
+                                            <p>Standard Bag Packing <span style='' t-field="o.bags_of_packing"/>kgs./bag</p>
+                                        </div>   
+                                    </div>
+                                </div>
+                            </span>
                     </div>
             </div>
 
             <div class="row"> 
                 <div class="col-xs-4" style="margin-top:100px!important;;">
-                    <img t-attf-src="data:image/*;base64,{{o.signature_image}}" t-att-alt="o.signature" width="200px!important;height:200px !important"/>
+                    <span t-if='o.signature_image'>
+                        <img t-attf-src="data:image/*;base64,{{o.signature_image}}" t-att-alt="o.signature" width="200px!important;height:200px !important"/>
+                    </span>
                     <p style="border-top:2px solid #000;">Authorized Signature</p>
                     <p  style='font-weight:bold;'>On behalf of <span t-field="o.company_id"/></p>
                 </div>
@@ -296,10 +426,10 @@
     </t>
 </template>
 
-<template id="report_saleorder">
+<template id="proforma_invoice">
     <t t-call="report.html_container">
         <t t-foreach="doc_ids" t-as="doc_id">
-            <t t-raw="translate_doc(doc_id, doc_model, 'partner_id.lang', 'sale.report_saleorder_document')"/>
+            <t t-raw="translate_doc(doc_id, doc_model, 'partner_id.lang', 'sale.proforma_invoice_document')"/>
         </t>
     </t>
 </template>
